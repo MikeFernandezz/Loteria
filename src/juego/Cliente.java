@@ -15,6 +15,7 @@ public class Cliente extends JFrame {
     private TablaJuego tablaJuego;
     private Set<Integer> cartasJugadas;
     private JLabel cartaActual;
+    private JLabel estadoConexion;
 
     public Cliente() {
         this.cartasJugadas = new HashSet<>();
@@ -28,13 +29,20 @@ public class Cliente extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
+        JPanel panelSuperior = new JPanel(new BorderLayout());
+        
+        cartaActual = new JLabel("Esperando inicio del juego...", SwingConstants.CENTER);
+        cartaActual.setPreferredSize(new Dimension(200, 200));
+        panelSuperior.add(cartaActual, BorderLayout.CENTER);
+        
+        estadoConexion = new JLabel("Conectando...", SwingConstants.CENTER);
+        estadoConexion.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        panelSuperior.add(estadoConexion, BorderLayout.SOUTH);
+        
+        add(panelSuperior, BorderLayout.NORTH);
+
         tablaJuego = new TablaJuego(this);
         add(tablaJuego, BorderLayout.CENTER);
-
-        cartaActual = new JLabel("Esperando carta...", SwingConstants.CENTER);
-        cartaActual.setPreferredSize(new Dimension(200, 200));
-        add(cartaActual, BorderLayout.NORTH);
-
         pack();
         setLocationRelativeTo(null);
     }
@@ -56,7 +64,11 @@ public class Cliente extends JFrame {
             try {
                 String mensaje;
                 while ((mensaje = in.readLine()) != null) {
-                    if (mensaje.startsWith("CARTA:")) {
+                    if (mensaje.startsWith("JUGADORES:")) {
+                        actualizarEstadoConexion(mensaje.split(":")[1]);
+                    } else if (mensaje.startsWith("INICIO_JUEGO")) {
+                        iniciarJuego();
+                    } else if (mensaje.startsWith("CARTA:")) {
                         int numeroCarta = Integer.parseInt(mensaje.split(":")[1]);
                         cartasJugadas.add(numeroCarta);
                         actualizarCartaActual(numeroCarta);
@@ -68,6 +80,20 @@ public class Cliente extends JFrame {
                 System.err.println("Error en la conexión: " + e.getMessage());
             }
         }).start();
+    }
+
+    private void iniciarJuego() {
+        SwingUtilities.invokeLater(() -> {
+            estadoConexion.setText("¡Juego en curso!");
+            cartaActual.setText("Preparados...");
+            JOptionPane.showMessageDialog(this, "¡El juego va a comenzar!");
+        });
+    }
+
+    private void actualizarEstadoConexion(String estado) {
+        SwingUtilities.invokeLater(() -> {
+            estadoConexion.setText("Esperando jugadores: " + estado);
+        });
     }
 
     private void actualizarCartaActual(int numeroCarta) {

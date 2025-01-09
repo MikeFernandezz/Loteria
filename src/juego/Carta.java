@@ -23,7 +23,6 @@ public class Carta {
         }
     }
 
-    // Getters y setters
     public int getNumero() { return numero; }
     public Image getImagen() { return imagen; }
     public boolean estaMarcada() { return marcada; }

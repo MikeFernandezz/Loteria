@@ -2,6 +2,7 @@ package juego;
 
 import java.util.*;
 import java.util.List;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -11,12 +12,14 @@ public class TablaJuego extends JPanel {
     private static final int COLUMNAS = 4;
     private JButton[][] botones;
     private Cliente cliente;
+    private boolean juegoIniciado;
 
     public TablaJuego(Cliente cliente) {
         this.cliente = cliente;
         this.tabla = new Carta[FILAS][COLUMNAS];
         this.botones = new JButton[FILAS][COLUMNAS];
-        setLayout(new GridLayout(FILAS, COLUMNAS));
+        this.juegoIniciado = false;
+        setLayout(new GridLayout(FILAS, COLUMNAS, 5, 5));
         inicializarTabla();
         crearBotones();
     }
@@ -42,14 +45,15 @@ public class TablaJuego extends JPanel {
         for (int i = 0; i < FILAS; i++) {
             for (int j = 0; j < COLUMNAS; j++) {
                 JButton boton = new JButton();
-                boton.setIcon(new ImageIcon(tabla[i][j].getImagen()
-                    .getScaledInstance(100, 150, Image.SCALE_SMOOTH)));
+                Image imgRedimensionada = tabla[i][j].getImagen()
+                    .getScaledInstance(100, 150, Image.SCALE_SMOOTH);
+                boton.setIcon(new ImageIcon(imgRedimensionada));
                 
                 final int fila = i;
                 final int columna = j;
                 
                 boton.addActionListener(e -> {
-                    if (cliente.puedeMarcarCarta(tabla[fila][columna].getNumero())) {
+                    if (juegoIniciado && cliente.puedeMarcarCarta(tabla[fila][columna].getNumero())) {
                         tabla[fila][columna].marcar();
                         boton.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
                         cliente.verificarVictoria();
@@ -62,8 +66,11 @@ public class TablaJuego extends JPanel {
         }
     }
 
+    public void iniciarJuego() {
+        this.juegoIniciado = true;
+    }
+
     public boolean verificarVictoria(Set<Integer> cartasJugadas) {
-        // Verifica si todas las cartas marcadas han sido jugadas
         for (int i = 0; i < FILAS; i++) {
             for (int j = 0; j < COLUMNAS; j++) {
                 if (tabla[i][j].estaMarcada() && 
@@ -73,7 +80,6 @@ public class TablaJuego extends JPanel {
             }
         }
 
-        // Verifica si todas las cartas están marcadas
         for (int i = 0; i < FILAS; i++) {
             for (int j = 0; j < COLUMNAS; j++) {
                 if (!tabla[i][j].estaMarcada()) {
