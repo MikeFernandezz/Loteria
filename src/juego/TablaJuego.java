@@ -33,7 +33,7 @@ public class TablaJuego extends JPanel {
             for (int j = 0; j < COLUMNAS; j++) {
                 int numeroCarta = numerosDisponibles.get(index++);
                 tabla[i][j] = new Carta(numeroCarta, 
-                    "C:\\Users\\manto\\Downloads\\Loteria\\src\\imagenes_cartas\\");
+                    "src\\imagenes_cartas\\");
             }
         }
     }

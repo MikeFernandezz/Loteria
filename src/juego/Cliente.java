@@ -15,6 +15,8 @@ public class Cliente extends JFrame {
     private TablaJuego tablaJuego;
     private Set<Integer> cartasJugadas;
     private JLabel cartaActual;
+    private JLabel estadoJuego;
+    private int clienteId;
 
     public Cliente() {
         this.cartasJugadas = new HashSet<>();
@@ -31,12 +33,20 @@ public class Cliente extends JFrame {
         tablaJuego = new TablaJuego(this);
         add(tablaJuego, BorderLayout.CENTER);
 
+        JPanel panelSuperior = new JPanel(new BorderLayout());
         cartaActual = new JLabel("Esperando carta...", SwingConstants.CENTER);
         cartaActual.setPreferredSize(new Dimension(200, 200));
-        add(cartaActual, BorderLayout.NORTH);
+        estadoJuego = new JLabel("Esperando jugadores...", SwingConstants.CENTER);
+        panelSuperior.add(cartaActual, BorderLayout.CENTER);
+        panelSuperior.add(estadoJuego, BorderLayout.SOUTH);
+        
+        add(panelSuperior, BorderLayout.NORTH);
 
         pack();
         setLocationRelativeTo(null);
+        
+        // Deshabilitar la tabla hasta que inicie el juego
+        tablaJuego.setEnabled(false);
     }
 
     private void conectarAlServidor() {
@@ -61,7 +71,16 @@ public class Cliente extends JFrame {
                         cartasJugadas.add(numeroCarta);
                         actualizarCartaActual(numeroCarta);
                     } else if (mensaje.startsWith("GANADOR:")) {
-                        mostrarGanador(mensaje.split(":")[1]);
+                        int ganadorId = Integer.parseInt(mensaje.split(":")[1]);
+                        mostrarGanador(ganadorId);
+                    } else if (mensaje.startsWith("ESPERANDO:")) {
+                        String[] partes = mensaje.split(":");
+                        int jugadoresActuales = Integer.parseInt(partes[1]);
+                        int jugadoresRequeridos = Integer.parseInt(partes[2]);
+                        actualizarEstadoEspera(jugadoresActuales, jugadoresRequeridos);
+                    } else if (mensaje.startsWith("ID:")) {
+                        clienteId = Integer.parseInt(mensaje.split(":")[1]);
+                        setTitle("Lotería Mexicana - Jugador " + clienteId);
                     }
                 }
             } catch (IOException e) {
@@ -73,7 +92,7 @@ public class Cliente extends JFrame {
     private void actualizarCartaActual(int numeroCarta) {
         SwingUtilities.invokeLater(() -> {
             ImageIcon icon = new ImageIcon(
-                "C:\\Users\\manto\\Downloads\\Loteria\\src\\imagenes_cartas\\" + 
+                "src\\imagenes_cartas\\" + 
                 numeroCarta + ".png");
             Image img = icon.getImage().getScaledInstance(150, 200, 
                 Image.SCALE_SMOOTH);
@@ -81,11 +100,21 @@ public class Cliente extends JFrame {
         });
     }
 
-    private void mostrarGanador(String ganador) {
+    private void mostrarGanador(int ganadorId) {
         SwingUtilities.invokeLater(() -> {
             JOptionPane.showMessageDialog(this, 
-                "¡El jugador " + ganador + " ha ganado!");
+                "¡EL JUGADOR " + ganadorId + " HA GANADO!");
             System.exit(0);
+        });
+    }
+
+    private void actualizarEstadoEspera(int actuales, int requeridos) {
+        SwingUtilities.invokeLater(() -> {
+            estadoJuego.setText("Esperando jugadores: " + actuales + "/" + requeridos);
+            if (actuales >= requeridos) {
+                estadoJuego.setText("¡Juego iniciado!");
+                tablaJuego.setEnabled(true);
+            }
         });
     }
 

@@ -7,13 +7,16 @@ import java.util.*;
 public class Servidor {
     private static final int PUERTO = 5000;
     private static final int MAX_JUGADORES = 16;
+    private final int jugadoresRequeridos;
     private List<ManejadorCliente> clientes;
     private Set<Integer> cartasJugadas;
     private boolean juegoEnCurso;
     @SuppressWarnings("unused")
     private Random random;
+    private int sigClienteId = 1;
 
-    public Servidor() {
+    public Servidor(int jugadoresRequeridos) {
+        this.jugadoresRequeridos = jugadoresRequeridos;
         this.clientes = new ArrayList<>();
         this.cartasJugadas = new HashSet<>();
         this.juegoEnCurso = false;
@@ -23,6 +26,7 @@ public class Servidor {
     public void iniciar() {
         try (ServerSocket serverSocket = new ServerSocket(PUERTO)) {
             System.out.println("Servidor iniciado en puerto " + PUERTO);
+            System.out.println("Esperando " + jugadoresRequeridos + " jugadores...");
 
             while (true) {
                 if (clientes.size() < MAX_JUGADORES && !juegoEnCurso) {
@@ -30,8 +34,11 @@ public class Servidor {
                     ManejadorCliente manejador = new ManejadorCliente(clienteSocket);
                     clientes.add(manejador);
                     new Thread(manejador).start();
+                    
+                    // Notificar a todos los clientes el número de jugadores actual
+                    broadcast("ESPERANDO:" + clientes.size() + ":" + jugadoresRequeridos);
 
-                    if (clientes.size() >= 1) {
+                    if (clientes.size() >= jugadoresRequeridos) {
                         iniciarJuego();
                     }
                 }
@@ -54,7 +61,7 @@ public class Servidor {
                 cartasJugadas.add(carta);
                 broadcast("CARTA:" + carta);
                 try {
-                    Thread.sleep(3000); // Espera 3 segundos entre cartas
+                    Thread.sleep(300); // Espera 3 segundos entre cartas
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
@@ -73,13 +80,17 @@ public class Servidor {
         private Socket socket;
         private PrintWriter out;
         private BufferedReader in;
+        private int clienteId;
 
         public ManejadorCliente(Socket socket) {
             this.socket = socket;
+            this.clienteId = sigClienteId++;
             try {
                 this.out = new PrintWriter(socket.getOutputStream(), true);
                 this.in = new BufferedReader(
                     new InputStreamReader(socket.getInputStream()));
+                // Enviar ID al cliente cuando se conecta
+                out.println("ID:" + clienteId);
             } catch (IOException e) {
                 System.err.println("Error al crear streams: " + e.getMessage());
             }
@@ -95,7 +106,7 @@ public class Servidor {
                 String mensaje;
                 while ((mensaje = in.readLine()) != null) {
                     if (mensaje.startsWith("VICTORIA")) {
-                        broadcast("GANADOR:" + socket.getInetAddress());
+                        broadcast("GANADOR:" + clienteId);
                         juegoEnCurso = false;
                     }
                 }
